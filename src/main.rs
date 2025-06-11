@@ -18,7 +18,7 @@ fn main() -> eframe::Result {
         ..Default::default()
     };
     eframe::run_native(
-        "eframe template",
+        "marwood",
         native_options,
         Box::new(|cc| Ok(Box::new(marwood_egui::TemplateApp::new(cc)))),
     )

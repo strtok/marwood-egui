@@ -1,4 +1,4 @@
-var cacheName = "egui-template-pwa";
+var cacheName = "marwood-egui-pwa";
 var filesToCache = [
   "./",
   "./index.html",
