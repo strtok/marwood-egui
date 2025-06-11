@@ -1,10 +1,10 @@
 [package]
-name = "marwood-egui"
+name = "marwood_egui"
 version = "0.1.0"
 authors = ["Erik Bremen <strtok@gmail.com>"]
-edition = "2021"
+edition = "2024"
 include = ["LICENSE-APACHE", "LICENSE-MIT", "**/*.rs", "Cargo.toml"]
-rust-version = "1.81"
+rust-version = "1.87"
 
 [package.metadata.docs.rs]
 all-features = true
