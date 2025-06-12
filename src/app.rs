@@ -1,15 +1,21 @@
+use marwood::cell::Cell;
+
+use crate::marwood::Marwood;
+
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
 pub struct MarwoodApp {
-    code: String,
+    input: String,
     output: String,
+    #[serde(skip)]
+    marwood: Marwood,
 }
 
 impl Default for MarwoodApp {
     fn default() -> Self {
         Self {
-            code: r#"(define (filter pred lst)
+            input: r#"(define (filter pred lst)
               (cond
                 ((null? lst) '())
                 ((pred (car lst))
@@ -34,10 +40,10 @@ impl Default for MarwoodApp {
 
               (sieve-helper (range 2 limit)))
 
-            (display (sieve 100))
-            (newline)"#
+            (sieve 100)"#
                 .to_owned(),
             output: String::new(),
+            marwood: Marwood::new(),
         }
     }
 }
@@ -79,7 +85,7 @@ impl eframe::App for MarwoodApp {
 
         egui::CentralPanel::default().show(ctx, |ui| {
             if ui.button("run").clicked() {
-                self.code.insert_str(0, "wat");
+                self.input.insert_str(0, "wat");
             }
 
             ui.heading("λMarwood");
@@ -106,7 +112,7 @@ impl eframe::App for MarwoodApp {
                 ui.fonts(|f| f.layout_job(layout_job))
             };
 
-            let code = &mut self.code;
+            let code = &mut self.input;
 
             ui.push_id("input_scroll_area", |ui| {
                 egui::ScrollArea::vertical().show(ui, |ui| {
@@ -140,7 +146,21 @@ impl eframe::App for MarwoodApp {
 
             ui.with_layout(egui::Layout::bottom_up(egui::Align::RIGHT), |ui| {
                 if ui.button("run").clicked() {
-                    self.output.insert_str(0, "=> \n");
+                    let mut input: Option<&str> = Some(&self.input);
+                    while input.is_some() {
+                        match self.marwood.vm.eval_text(input.unwrap()) {
+                            Ok((cell, rest)) => {
+                                if cell != Cell::Void {
+                                    self.output.insert_str(0, &format!("=> {}\n", cell));
+                                }
+                                input = rest;
+                            }
+                            Err(e) => {
+                                self.output.insert_str(0, &format!("=> error: {}\n", e));
+                                break;
+                            }
+                        }
+                    }
                 }
             });
 
