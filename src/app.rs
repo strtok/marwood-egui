@@ -1,35 +1,55 @@
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
-pub struct TemplateApp {
-    // Example stuff:
-    label: String,
-
-    #[serde(skip)] // This how you opt-out of serialization of a field
-    value: f32,
-
+pub struct MarwoodApp {
     code: String,
+    output: String,
 }
 
-impl Default for TemplateApp {
+impl Default for MarwoodApp {
     fn default() -> Self {
         Self {
-            // Example stuff:
-            label: "Hello Marwood!".to_owned(),
-            value: 2.7,
-            code: "".to_owned(),
+            code: r#"(define (filter pred lst)
+              (cond
+                ((null? lst) '())
+                ((pred (car lst))
+                 (cons (car lst) (filter pred (cdr lst))))
+                (else
+                 (filter pred (cdr lst)))))
+
+            (define (sieve limit)
+              (define (range start end)
+                (if (> start end)
+                    '()
+                    (cons start (range (+ start 1) end))))
+
+              (define (remove-multiples n lst)
+                (filter (lambda (x) (not (= (modulo x n) 0))) lst))
+
+              (define (sieve-helper numbers)
+                (if (null? numbers)
+                    '()
+                    (cons (car numbers)
+                          (sieve-helper (remove-multiples (car numbers) (cdr numbers))))))
+
+              (sieve-helper (range 2 limit)))
+
+            (display (sieve 100))
+            (newline)"#
+                .to_owned(),
+            output: String::new(),
         }
     }
 }
 
-impl TemplateApp {
+impl MarwoodApp {
     /// Called once before the first frame.
     pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
         Default::default()
     }
 }
 
-impl eframe::App for TemplateApp {
+impl eframe::App for MarwoodApp {
     /// Called by the frame work to save state before shutdown.
     fn save(&mut self, _storage: &mut dyn eframe::Storage) {}
 
@@ -58,7 +78,10 @@ impl eframe::App for TemplateApp {
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            // The central panel the region left after adding TopPanel's and SidePanel's
+            if ui.button("run").clicked() {
+                self.code.insert_str(0, "wat");
+            }
+
             ui.heading("λMarwood");
 
             let mut theme =
@@ -85,29 +108,53 @@ impl eframe::App for TemplateApp {
 
             let code = &mut self.code;
 
-            egui::ScrollArea::vertical().show(ui, |ui| {
-                ui.add(
-                    egui::TextEdit::multiline(code)
-                        .font(egui::TextStyle::Monospace) // for cursor height
-                        .code_editor()
-                        .desired_rows(10)
-                        .lock_focus(true)
-                        .desired_width(f32::INFINITY)
-                        .layouter(&mut layouter),
-                );
+            ui.push_id("input_scroll_area", |ui| {
+                egui::ScrollArea::vertical().show(ui, |ui| {
+                    ui.add(
+                        egui::TextEdit::multiline(code)
+                            .id_source("input")
+                            .font(egui::TextStyle::Monospace) // for cursor height
+                            .code_editor()
+                            .desired_rows(10)
+                            .lock_focus(true)
+                            .desired_width(f32::INFINITY)
+                            .layouter(&mut layouter),
+                    )
+                })
+            });
+
+            ui.push_id("output_scroll_area", |ui| {
+                egui::ScrollArea::vertical().show(ui, |ui| {
+                    ui.add_enabled(
+                        false,
+                        egui::TextEdit::multiline(&mut self.output)
+                            .id_source("output")
+                            .font(egui::TextStyle::Monospace) // for cursor height
+                            .code_editor()
+                            .desired_rows(10)
+                            .lock_focus(true)
+                            .desired_width(f32::INFINITY),
+                    );
+                })
+            });
+
+            ui.with_layout(egui::Layout::bottom_up(egui::Align::RIGHT), |ui| {
+                if ui.button("run").clicked() {
+                    self.output.insert_str(0, "=> \n");
+                }
             });
 
             ui.separator();
 
             ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
-                powered_by_egui_and_eframe(ui);
+                powered_by_marwood(ui);
                 egui::warn_if_debug_build(ui);
             });
         });
     }
 }
 
-fn powered_by_egui_and_eframe(ui: &mut egui::Ui) {
+fn powered_by_marwood(ui: &mut egui::Ui) {
     ui.horizontal(|ui| {
         ui.spacing_mut().item_spacing.x = 0.0;
         ui.label("Powered by ");

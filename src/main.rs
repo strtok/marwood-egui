@@ -20,7 +20,7 @@ fn main() -> eframe::Result {
     eframe::run_native(
         "marwood",
         native_options,
-        Box::new(|cc| Ok(Box::new(marwood_egui::TemplateApp::new(cc)))),
+        Box::new(|cc| Ok(Box::new(marwood_egui::MarwoodApp::new(cc)))),
     )
 }
 
@@ -50,7 +50,7 @@ fn main() {
             .start(
                 canvas,
                 web_options,
-                Box::new(|cc| Ok(Box::new(marwood_egui::TemplateApp::new(cc)))),
+                Box::new(|cc| Ok(Box::new(marwood_egui::MarwoodApp::new(cc)))),
             )
             .await;
 
