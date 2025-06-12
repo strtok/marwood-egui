@@ -84,10 +84,6 @@ impl eframe::App for MarwoodApp {
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            if ui.button("run").clicked() {
-                self.input.insert_str(0, "wat");
-            }
-
             ui.heading("λMarwood");
 
             let mut theme =
