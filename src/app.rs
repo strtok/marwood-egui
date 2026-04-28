@@ -15,33 +15,7 @@ pub struct MarwoodApp {
 impl Default for MarwoodApp {
     fn default() -> Self {
         Self {
-            input: r#"(define (filter pred lst)
-              (cond
-                ((null? lst) '())
-                ((pred (car lst))
-                 (cons (car lst) (filter pred (cdr lst))))
-                (else
-                 (filter pred (cdr lst)))))
-
-            (define (sieve limit)
-              (define (range start end)
-                (if (> start end)
-                    '()
-                    (cons start (range (+ start 1) end))))
-
-              (define (remove-multiples n lst)
-                (filter (lambda (x) (not (= (modulo x n) 0))) lst))
-
-              (define (sieve-helper numbers)
-                (if (null? numbers)
-                    '()
-                    (cons (car numbers)
-                          (sieve-helper (remove-multiples (car numbers) (cdr numbers))))))
-
-              (sieve-helper (range 2 limit)))
-
-            (sieve 100)"#
-                .to_owned(),
+            input: String::new(),
             output: String::new(),
             marwood: Marwood::new(),
         }
@@ -123,18 +97,23 @@ impl eframe::App for MarwoodApp {
             });
 
             ui.push_id("output_scroll_area", |ui| {
-                egui::ScrollArea::vertical().show(ui, |ui| {
-                    ui.add_enabled(
-                        false,
-                        egui::TextEdit::multiline(&mut self.output)
-                            .id_salt("output")
-                            .font(egui::TextStyle::Monospace) // for cursor height
-                            .code_editor()
-                            .desired_rows(10)
-                            .lock_focus(true)
-                            .desired_width(f32::INFINITY),
-                    );
-                })
+                let row_height = ui.text_style_height(&egui::TextStyle::Monospace);
+                egui::ScrollArea::vertical()
+                    .stick_to_bottom(true)
+                    .max_height(row_height * 10.0)
+                    .auto_shrink([false; 2])
+                    .show(ui, |ui| {
+                        ui.add_enabled(
+                            false,
+                            egui::TextEdit::multiline(&mut self.output)
+                                .id_salt("output")
+                                .font(egui::TextStyle::Monospace) // for cursor height
+                                .code_editor()
+                                .desired_rows(10)
+                                .lock_focus(true)
+                                .desired_width(f32::INFINITY),
+                        );
+                    })
             });
 
             ui.with_layout(egui::Layout::bottom_up(egui::Align::RIGHT), |ui| {
@@ -143,13 +122,29 @@ impl eframe::App for MarwoodApp {
                     while input.is_some() {
                         match self.marwood.vm.eval_text(input.unwrap()) {
                             Ok((cell, rest)) => {
+                                let displayed =
+                                    std::mem::take(&mut *self.marwood.display_buffer.borrow_mut());
+                                if !displayed.is_empty() {
+                                    self.output.push_str(&displayed);
+                                    if !displayed.ends_with('\n') {
+                                        self.output.push('\n');
+                                    }
+                                }
                                 if cell != Cell::Void {
-                                    self.output.insert_str(0, &format!("=> {}\n", cell));
+                                    self.output.push_str(&format!("=> {}\n", cell));
                                 }
                                 input = rest;
                             }
                             Err(e) => {
-                                self.output.insert_str(0, &format!("=> error: {}\n", e));
+                                let displayed =
+                                    std::mem::take(&mut *self.marwood.display_buffer.borrow_mut());
+                                if !displayed.is_empty() {
+                                    self.output.push_str(&displayed);
+                                    if !displayed.ends_with('\n') {
+                                        self.output.push('\n');
+                                    }
+                                }
+                                self.output.push_str(&format!("=> error: {}\n", e));
                                 break;
                             }
                         }
