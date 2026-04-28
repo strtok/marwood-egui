@@ -4,16 +4,16 @@ version = "0.1.0"
 authors = ["Erik Bremen <strtok@gmail.com>"]
 edition = "2024"
 include = ["LICENSE-APACHE", "LICENSE-MIT", "**/*.rs", "Cargo.toml"]
-rust-version = "1.87"
+rust-version = "1.92"
 
 [package.metadata.docs.rs]
 all-features = true
 targets = ["x86_64-unknown-linux-gnu", "wasm32-unknown-unknown"]
 
 [dependencies]
-egui = "0.31"
-egui_extras = { version = "0.31", features = ["syntect"] }
-eframe = { version = "0.31", default-features = false, features = [
+egui = "0.34"
+egui_extras = { version = "0.34", features = ["syntect"] }
+eframe = { version = "0.34", default-features = false, features = [
     "accesskit",     # Make egui compatible with screen readers. NOTE: adds a lot of dependencies.
     "default_fonts", # Embed the default egui fonts.
     "glow",          # Use the glow rendering backend. Alternative: "wgpu".
@@ -21,21 +21,22 @@ eframe = { version = "0.31", default-features = false, features = [
     "wayland",       # To support Linux (and CI)
     "x11",           # To support older Linux distributions (restores one of the default features)
 ] }
-log = "0.4.27"
+log = "0.4.29"
 marwood = { git = "https://github.com/strtok/marwood.git" }
 
 # You only need serde if you want app persistence:
-serde = { version = "1.0.219", features = ["derive"] }
+serde = { version = "1.0.228", features = ["derive"] }
 
 # native:
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-env_logger = "0.11.8"
+env_logger = "0.11.10"
 
 # web:
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 getrandom = { version = "0.3.3", features = ["wasm_js"] }
-wasm-bindgen-futures = "0.4.50"
-web-sys = "0.3.70"                                        # to access the DOM (to hide the loading text)
+getrandom_v04 = { package = "getrandom", version = "0.4", features = ["wasm_js"] }
+wasm-bindgen-futures = "0.4.68"
+web-sys = "0.3.95"                                        # to access the DOM (to hide the loading text)
 
 [profile.release]
 opt-level = 2 # fast and small wasm

@@ -60,14 +60,11 @@ impl eframe::App for MarwoodApp {
     fn save(&mut self, _storage: &mut dyn eframe::Storage) {}
 
     /// Called each time the UI needs repainting, which may be many times per second.
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        // Put your widgets into a `SidePanel`, `TopBottomPanel`, `CentralPanel`, `Window` or `Area`.
-        // For inspiration and more examples, go to https://emilk.github.io/egui
+    fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+        let ctx = ui.ctx().clone();
 
-        egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
-            // The top panel is often a good place for a menu bar:
-
-            egui::menu::bar(ui, |ui| {
+        egui::Panel::top("top_panel").show_inside(ui, |ui| {
+            egui::MenuBar::new().ui(ui, |ui| {
                 // NOTE: no File->Quit on web pages!
                 let is_web = cfg!(target_arch = "wasm32");
                 if !is_web {
@@ -83,7 +80,7 @@ impl eframe::App for MarwoodApp {
             });
         });
 
-        egui::CentralPanel::default().show(ctx, |ui| {
+        egui::CentralPanel::default().show_inside(ui, |ui| {
             ui.heading("λMarwood");
 
             let mut theme =
@@ -96,16 +93,16 @@ impl eframe::App for MarwoodApp {
                 });
             });
 
-            let mut layouter = |ui: &egui::Ui, buf: &str, wrap_width: f32| {
+            let mut layouter = |ui: &egui::Ui, buf: &dyn egui::TextBuffer, wrap_width: f32| {
                 let mut layout_job = egui_extras::syntax_highlighting::highlight(
                     ui.ctx(),
                     ui.style(),
                     &theme,
-                    buf,
+                    buf.as_str(),
                     "lisp",
                 );
                 layout_job.wrap.max_width = wrap_width;
-                ui.fonts(|f| f.layout_job(layout_job))
+                ui.fonts_mut(|f| f.layout_job(layout_job))
             };
 
             let code = &mut self.input;
@@ -114,7 +111,7 @@ impl eframe::App for MarwoodApp {
                 egui::ScrollArea::vertical().show(ui, |ui| {
                     ui.add(
                         egui::TextEdit::multiline(code)
-                            .id_source("input")
+                            .id_salt("input")
                             .font(egui::TextStyle::Monospace) // for cursor height
                             .code_editor()
                             .desired_rows(10)
@@ -130,7 +127,7 @@ impl eframe::App for MarwoodApp {
                     ui.add_enabled(
                         false,
                         egui::TextEdit::multiline(&mut self.output)
-                            .id_source("output")
+                            .id_salt("output")
                             .font(egui::TextStyle::Monospace) // for cursor height
                             .code_editor()
                             .desired_rows(10)
